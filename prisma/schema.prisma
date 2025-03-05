@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Fund {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  loans       Loan[]
+  transactions Transaction[]
+}
+
+model User {
+  id         Int     @id @default(autoincrement())
+  fundId     Int
+  fullName   String
+  phoneNumber String @unique
+  role       Role
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  fund       Fund     @relation(fields: [fundId], references: [id])
+  loans      Loan[]
+  transactions Transaction[]
+  payments   Payment[]
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Loan {
+  id             Int      @id @default(autoincrement())
+  fundId         Int
+  userId         Int
+  amount         Decimal
+  interestRate   Decimal  @default(0)
+  durationMonths Int
+  startDate      DateTime
+  status         LoanStatus @default(PENDING)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  fund       Fund @relation(fields: [fundId], references: [id])
+  user       User @relation(fields: [userId], references: [id])
+  installments Installment[]
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model Installment {
+  id         Int      @id @default(autoincrement())
+  loanId     Int
+  dueDate    DateTime
+  amount     Decimal
+  status     InstallmentStatus @default(UNPAID)
+  paidAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  loan       Loan @relation(fields: [loanId], references: [id])
+}
+
+enum InstallmentStatus {
+  UNPAID
+  PAID
+  OVERDUE
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  fundId      Int
+  userId      Int
+  paymentId   Int
+  type        TransactionType
+  amount      Decimal
+  referenceId String  @unique
+  status      TransactionStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+
+  fund       Fund @relation(fields: [fundId], references: [id])
+  user       User @relation(fields: [userId], references: [id])
+  payment    Payment @relation(fields: [paymentId], references: [id])
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  LOAN_PAYMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Payment {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  transactionId Int
+  paymentUrl   String
+  status       PaymentStatus @default(PENDING)
+  paidAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  user        User @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+}
+
+model OTP {
+  id          Int      @id @default(autoincrement())
+  phoneNumber String
+  code        String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
