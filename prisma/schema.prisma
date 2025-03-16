@@ -14,30 +14,49 @@ datasource db {
 }
 
 model Fund {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
+  adminId     Int
   description String?
+  balance     Decimal  @default(0) // موجودی کل صندوق
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       User[]
+  admin       User     @relation(fields: [adminId], references: [id])
+  
+  memberships FundMembership[]
   loans       Loan[]
   transactions Transaction[]
 }
 
 model User {
   id         Int     @id @default(autoincrement())
-  fundId     Int
-  fullName   String
-  phoneNumber String @unique
-  role       Role
+  chatId     BigInt? @unique
+  fullName   String?
+  phoneNumber String? @unique
+  state      String?
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  fund       Fund     @relation(fields: [fundId], references: [id])
+  funds   Fund[]
+  memberships FundMembership[]
   loans      Loan[]
   transactions Transaction[]
   payments   Payment[]
+}
+
+model FundMembership {
+  id       String   @id @default(uuid())
+  userId   Int   // کاربر عضو
+  fundId   String   // صندوقی که کاربر در آن عضو شده
+  role     Role
+  balance  Decimal  @default(0) // موجودی شخص در این صندوق
+  
+  user     User     @relation(fields: [userId], references: [id])
+  fund     Fund     @relation(fields: [fundId], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -47,7 +66,7 @@ enum Role {
 
 model Loan {
   id             Int      @id @default(autoincrement())
-  fundId         Int
+  fundId         String
   userId         Int
   amount         Decimal
   interestRate   Decimal  @default(0)
@@ -89,7 +108,7 @@ enum InstallmentStatus {
 
 model Transaction {
   id          Int      @id @default(autoincrement())
-  fundId      Int
+  fundId      String
   userId      Int
   paymentId   Int
   type        TransactionType

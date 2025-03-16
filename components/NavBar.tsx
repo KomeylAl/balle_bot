@@ -6,11 +6,11 @@ import React from 'react';
 import { TbLayoutDashboard } from 'react-icons/tb';
 
 const items = [
-   { title: "داشبورد", link: "/", icon: <TbLayoutDashboard /> },
-   { title: "اعضاء", link: "/members", icon: <TbLayoutDashboard /> },
-   { title: "وام ها", link: "/loans", icon: <TbLayoutDashboard /> },
-   { title: "پرداخت ها", link: "/payments", icon: <TbLayoutDashboard /> },
-   { title: "گزارشات", link: "/logs", icon: <TbLayoutDashboard /> },
+   { title: "داشبورد", link: "/dashboard", icon: <TbLayoutDashboard /> },
+   { title: "اعضاء", link: "/dashboard/members", icon: <TbLayoutDashboard /> },
+   { title: "وام ها", link: "/dashboard/loans", icon: <TbLayoutDashboard /> },
+   { title: "پرداخت ها", link: "/dashboard/payments", icon: <TbLayoutDashboard /> },
+   { title: "گزارشات", link: "/dashboard/logs", icon: <TbLayoutDashboard /> },
 ];
 
 const NavBar = () => {
