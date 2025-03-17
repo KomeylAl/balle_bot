@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { formatPhoneNumber } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 const state = { userId: '', state: '' };
@@ -22,7 +23,8 @@ export async function POST(req: NextRequest) {
 
     if (text === "/start") {
       if (!user) {
-        await sendMessage(userId, "👋 لطفاً شماره موبایل خود را ارسال کنید.");
+        await sendMessage(userId, "👋 سلام.\nبه گنجه نیکو خوش اومدین.\nتوجه کنید:\nاگر فرد دیگه ای شما رو عضو صندوقی کرده باشه، میتونین مشاهده کنین. البته خودتون هم میتونین صندوق خودتون رو بسازین و اعضای جدید بهش اضافه کنین.\n.لطفا برای شروع شماره موبایل خودتون رو ارسال کنین");
+        await sendHelloOptions(userId);
         state.state = "waiting_for_phone";
         state.userId = userId;
         return NextResponse.json({ message: "Waiting for user phone" });
@@ -51,19 +53,20 @@ export async function POST(req: NextRequest) {
 
     console.log(state);
 
-    if (state.state === 'waiting_for_phone' && /^09\d{9}$/.test(text!)) {
+    if (state.state === 'waiting_for_phone' && body.message.contact.phone_number) {
       console.log("hello")
-      const user = await prisma.user.findUnique({ where: { phoneNumber: text } });
+      const phone = formatPhoneNumber(body.message.contact.phone_number);
+      const user = await prisma.user.findUnique({ where: { phoneNumber: phone } });
       if (!user) {
         await prisma.user.create({
-          data: { phoneNumber: text, chatId: userId, state: "waiting_for_fullname" }
+          data: { phoneNumber: phone, chatId: userId, state: "waiting_for_fullname" }
         });
         await sendMessage(userId, "لطفاً نام و نام خانوادگی خود را ارسال کنید.");
         state.state = "";
         return NextResponse.json({ message: "User registered" });
       } else {
         console.log("hiii")
-        await prisma.user.update({ where: { phoneNumber: text }, data: { chatId: userId }});
+        await prisma.user.update({ where: { phoneNumber: phone }, data: { chatId: userId }});
         const memberships = await prisma.fundMembership.findMany({
           where: { userId: user.id },
           include: { fund: true }
@@ -76,6 +79,7 @@ export async function POST(req: NextRequest) {
         });
         await sendMessage(userId, message);
         await sendOptions(userId, true);
+        state.state = "";
         return NextResponse.json({ message: "User already registered" });
       }
     }
@@ -279,4 +283,21 @@ async function sendOptions(chatId: number, isRegistered: boolean) {
       reply_markup: { inline_keyboard: keyboard },
     }),
   });
+}
+
+async function sendHelloOptions(chatId: number) {
+  const API_URL = `https://tapi.bale.ai/bot${process.env.BOT_TOKEN}/sendMessage`;
+  const keyboard = [
+    [{ text: "ارسال شماره موبایل", request_contact: true }]
+  ];
+
+  await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: "👇 لطفا یک گزینه را انتخاب کنید:",
+      reply_markup: { keyboard: keyboard, resize_keyboard: true, one_time_keyboard: true },
+    }),
+  })
 }

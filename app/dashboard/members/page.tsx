@@ -7,6 +7,7 @@ import { TiPlus } from "react-icons/ti";
 import Header from '@/components/Header';
 import Popup from '@/components/ui/popup';
 import AddMember from '@/components/AddMember';
+import MemberItem from '@/components/MemberItem';
 
 const Members = () => {
 
@@ -16,7 +17,7 @@ const Members = () => {
   return (
     <div className="h-full text-white bg-white/70 backdrop-blur-xl w-full overflow-y-auto text-black p-8 space-y-5">
 
-      <Header />
+      <Header title='اعضاء'/>
 
       <div className='w-full'>
         <button
@@ -38,7 +39,7 @@ const Members = () => {
 
       {data && (
         data.map((member: any) => (
-          <div key={member.id} className='text-black'>{member.fullName}</div>
+          <MemberItem member={member} key={member.id} />
         ))
       )}
 

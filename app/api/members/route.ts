@@ -45,20 +45,34 @@ export async function POST(req: NextRequest) {
 
       const { name, phone } = await req.json();
 
-      const user = await prisma.user.create({
-         data: {
-            fullName: name,
-            phoneNumber: phone,
-            state: "member_added"
-         }
+      const existingUser = await prisma.user.findUnique({
+         where: { phoneNumber: phone }
       });
-      await prisma.fundMembership.create({
-         data: {
-            userId: user.id,
-            fundId: accountId.value,
-            role: "MEMBER"
-         }
-      });
+
+      if (!existingUser) {
+         const user = await prisma.user.create({
+            data: {
+               fullName: name,
+               phoneNumber: phone,
+               state: "member_added"
+            }
+         });
+         await prisma.fundMembership.create({
+            data: {
+               userId: user.id,
+               fundId: accountId.value,
+               role: "MEMBER"
+            }
+         });
+      } else {
+         await prisma.fundMembership.create({
+            data: {
+               userId: existingUser.id,
+               fundId: accountId.value,
+               role: "MEMBER"
+            }
+         });
+      }
       return NextResponse.json({ message: "Member added successfully" }, { status: 201 });
    } catch (error: any) {
       console.log(error.message);
